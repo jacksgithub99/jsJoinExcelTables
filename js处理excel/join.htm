@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <!-- 网络加载 jquery -->
+    <!-- <script src="https://code.jquery.com/jquery-3.0.0.min.js" integrity="sha256-JmvOoLtYsmqlsWxa7mDSLMwa6dZ9rrIdtrrVYRnDRH0=" crossorigin="anonymous"></script> -->
+    <!-- 本地jquery -->
+    <script src="js/jquery-3.0.0.min.js"></script>
+
+    <script src="js/xlsx.core.min.js"></script>
+    <script src="js/xlsxtool.js"></script>
+</head>
+ 
+<body>
+    <p id="p1">第1个表</p>
+    <input type="file" id="excel-file1" name="">
+    <p id="p2">第2个表</p>
+    <input type="file" id="excel-file2" name="">
+    
+    <p><a style="color:blue;">ID</a>(匹配字段-2个表中相同的列名称，如2个表的学生学号一致且值唯一，就填"<a style="color:red;">学号</a>")</p>
+    <p style="font-size: smaller">表1第1行和表2哪一行拼接呢？那肯定是张三的成绩拼到张三那一行啊！但学校可能有2个张三，但学号是唯一的，所以用学号做ID（数据匹配依据）</p>
+    <input type="text" id="tbID" placeholder="2个表相同且值唯一的列名">
+    <p><a style="color:blue;">拼接字段</a>(第2个表参与拼接的列，如要把第2个表的数学、语文列拼接到新表，则填"<a style="color:red;">数学,语文</a>"，中间逗号隔开)</p>
+    <input type="text" id="appends" placeholder="新增列名1,列名2,..">
+    <p>拼接2个表</p>
+    <button type="button" onclick="clickJoin(this)">拼接2个成表</button>
+
+    <p class="tips">测试数据-示例</p>
+    <button class="btn-gen1" type="button" onclick="clickGenTable1(this)">下载学生表</button>
+    <button class="btn-gen2" type="button" onclick="clickGenTable2(this)">下载学生成绩表</button>
+</body>
+ 
+<script>
+    $('#excel-file1').change(function (e) {
+        document.getElementById('p1').innerHTML = '第1个表（已获取）'
+        var files = e.target.files;
+        var fileReader = new FileReader();
+        fileReader.onload = function (ev) {
+            try {
+                var data = ev.target.result,
+                    workbook = XLSX.read(data, {
+                        type: 'binary'
+                    }), // 以二进制流方式读取得到整份excel表格对象
+                    persons = []; // 存储获取到的数据
+            } catch (e) {
+                console.log('文件类型不正确');
+                return;
+            }
+ 
+            // 表格的表格范围，可用于判断表头是否数量是否正确
+            var fromTo = '';
+            // 遍历每张表读取
+            // ！！！workbook.Sheets是一个对象！！不是数组！
+            console.log('=====workbook1=====:') 
+            console.log(workbook) 
+            for (var propertyName in workbook.Sheets) {
+                console.log('propertyName: ' + propertyName) 
+                if (workbook.Sheets.hasOwnProperty(propertyName)) {
+	               var sheet = workbook.Sheets[propertyName]
+	               // console.log(sheet)
+                   fromTo = sheet['!ref'];
+                   console.log('fromTo: ' + fromTo);
+                   firstTableRows = XLSX.utils.sheet_to_json(sheet)
+                   persons = persons.concat(firstTableRows);
+                   break; // 如果只取第一张表，就取消注释这行
+                }
+            }
+            console.log('表-json对象1:');
+            console.log(firstTableRows);
+            // let jsonString = JSON.stringify(firstTableRows)
+            // console.log(jsonString);
+        };
+        // 以二进制方式打开文件
+        fileReader.readAsBinaryString(files[0]);
+    });
+    $('#excel-file2').change(function (e) {
+        document.getElementById('p2').innerHTML = '第2个表（已获取）'
+        var files = e.target.files;
+        var fileReader = new FileReader();
+        fileReader.onload = function (ev) {
+            try {
+                var data = ev.target.result,
+                    workbook = XLSX.read(data, {
+                        type: 'binary'
+                    }), // 以二进制流方式读取得到整份excel表格对象
+                    persons = []; // 存储获取到的数据
+            } catch (e) {
+                console.log('文件类型不正确');
+                return;
+            }
+ 
+            // 表格的表格范围，可用于判断表头是否数量是否正确
+            var fromTo = '';
+            // 遍历每张表读取
+            // ！！！workbook.Sheets是一个对象！！不是数组！
+            console.log('=====workbook2=====:') 
+            console.log(workbook) 
+            for (var propertyName in workbook.Sheets) {
+                console.log('propertyName: ' + propertyName)
+                if (workbook.Sheets.hasOwnProperty(propertyName)) {
+                   var sheet = workbook.Sheets[propertyName]
+                   // console.log(sheet)
+                   fromTo = sheet['!ref'];
+                   console.log('fromTo: ' + fromTo);
+                   secondTableRows = XLSX.utils.sheet_to_json(sheet)
+                   persons = persons.concat(secondTableRows);
+                   break; // 如果只取第一张表，就取消注释这行
+                }
+            }
+            console.log('表-json对象2:');
+            console.log(secondTableRows);
+        };
+        // 以二进制方式打开文件
+        fileReader.readAsBinaryString(files[0]);
+    });
+
+    function clickJoin(argument) {
+        // body...
+        console.log('点击了‘拼接’按钮')
+        // jsonToExcel(    sheet1data,    'demo.xls');
+        // testGen()
+        if(!firstTableRows) {
+            alert('请先选择第1个表')
+        }else if(!secondTableRows) {
+            alert('请先选择第2个表')
+        }else {
+            let idStr =  document.getElementById('tbID').value
+            console.log(idStr)
+            let appends = document.getElementById('appends').value
+            console.log(appends)   
+            if (!idStr) {
+                alert('请先填写ID')
+                return
+            }      
+            if(!appends) {
+                alert('请先填写拼接字段')
+                return
+            }
+            let appendsArr = []
+            if(appends.indexOf(',') != -1) {
+                appendsArr = appends.split(',')
+            }else if(appends.indexOf('，') != -1) {
+                appendsArr = appends.split('，')
+            }else if(appends.indexOf(';') != -1) {
+                appendsArr = appends.split(';')
+            }else if(appends.indexOf('；') != -1) {
+                appendsArr = appends.split('；')
+            }
+
+            console.log(appendsArr)
+            for (var i = 0; i < firstTableRows.length; i++) {
+                let t1row = firstTableRows[i]
+                for (var j = 0; j < secondTableRows.length; j++) {
+                    let t2row = secondTableRows[j]
+                    // if(t2row['学号'] == t1row['学号']) {
+                    //     t1row['语文'] = t2row['语文']
+                    //     t1row['数学'] = t2row['数学']
+                    // }
+
+                    if (t2row[idStr] == t1row[idStr]) {
+                        for (var k = 0; k < appendsArr.length; k++) {
+                            let key = appendsArr[k]
+                            // console.log('key = ' + key)
+                            if (t2row[key] !== undefined) {
+                                t1row[key] = t2row[key]
+                            }
+                        }
+                    }
+                }
+            }
+            xtGenExcel(firstTableRows, '拼接表')
+        }
+    }
+
+    function clickGenTable1(argument) {
+        // body...
+        testGenStudents()
+
+    }
+    function clickGenTable2(argument) {
+        // body...
+        testGenResults()
+    }
+
+// demo调用演示
+let sheet1data = [ // 注意数组中每列key的排序，因为导出列表时按照key的排序导出的
+    { 部门: '行政部', 姓名: 'zhangsan', age: 18 },
+    { 部门: 'IT', 姓名: 'lisi', age: 19 },
+];
+
+var firstTableRows = undefined
+var secondTableRows = undefined
+
+
+</script>
+<style type="text/css">
+    .tips {
+        position: fixed;
+        bottom: 30px;
+        left: 20px;
+        color: #333333;
+        font-size: small;
+    }
+    .btn-gen1 {
+        position: fixed;
+        bottom: 10px;
+        left: 20px;
+        color: blue;
+    }
+    .btn-gen2 {
+        position: fixed;
+        bottom: 10px;
+        left: 120px;
+        color: blue;
+    }
+</style>
+ 
+</html>

@@ -3,22 +3,22 @@
  
 <head>
     <meta charset="UTF-8">
-    <title>Document</title>
+    <title>表格合并</title>
     <!-- 网络加载 jquery -->
     <!-- <script src="https://code.jquery.com/jquery-3.0.0.min.js" integrity="sha256-JmvOoLtYsmqlsWxa7mDSLMwa6dZ9rrIdtrrVYRnDRH0=" crossorigin="anonymous"></script> -->
     <!-- 本地jquery -->
     <script src="js/jquery-3.0.0.min.js"></script>
 
-    <script src="js/xlsx.core.min.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
     <script src="js/xlsxtool.js"></script>
 </head>
  
 <body>
+    <h3 style="text-align: center;">表格合并</h3>
     <p id="p1">第1个表</p>
     <input type="file" id="excel-file1" name="">
     <p id="p2">第2个表</p>
     <input type="file" id="excel-file2" name="">
-    
     <p><a style="color:blue;">ID</a>(匹配字段-2个表中相同的列名称，如2个表的学生学号一致且值唯一，就填"<a style="color:red;">学号</a>")</p>
     <p style="font-size: smaller">表1第1行和表2哪一行拼接呢？那肯定是张三的成绩拼到张三那一行啊！但学校可能有2个张三，但学号是唯一的，所以用学号做ID（数据匹配依据）</p>
     <input type="text" id="tbID" placeholder="2个表相同且值唯一的列名">
@@ -26,10 +26,17 @@
     <input type="text" id="appends" placeholder="新增列名1,列名2,..">
     <p>拼接2个表</p>
     <button type="button" onclick="clickJoin(this)">拼接2个成表</button>
-
-    <p class="tips">测试数据-示例</p>
-    <button class="btn-gen1" type="button" onclick="clickGenTable1(this)">下载学生表</button>
-    <button class="btn-gen2" type="button" onclick="clickGenTable2(this)">下载学生成绩表</button>
+    <!-- bottom -->
+    <div class="bottom">
+        <h4>txt转excel</h4>
+        <p class="txt-tips">导入txt文档<button class="blue" type="button" onclick="clickGenTxt(this)">下载示例.txt</button>，生成excel。txt中换行=excel换行，txt用英文逗号“,”来分隔列：</p>
+        <a>导入“下载示例.txt”试试看：</a>
+        <input class="input-txt" type="file" id="txt-file" name="">
+        <div class="gap-100"></div>
+        <p class="tips">测试数据-示例（无需导入文件，直接“下载”）</p>
+        <button class="blue" type="button" onclick="clickGenTable1(this)">下载学生表</button>
+        <button class="blue" type="button" onclick="clickGenTable2(this)">下载学生成绩表</button>
+    </div>
 </body>
  
 <script>
@@ -115,6 +122,66 @@
         // 以二进制方式打开文件
         fileReader.readAsBinaryString(files[0]);
     });
+    $('#txt-file').change(function (e) {
+        var files = e.target.files;
+        var file = files[0];
+        var reader = new FileReader();
+        reader.onload = function(){
+            let orgiginStr = reader.result
+            let arr = orgiginStr.split('\n')
+            let objArr = []
+
+            let numberPrefix = 'WWX0'
+            let urlPrefix = 'https://emergency.wujiangguanjia.com:18443/miniApp/mobike/app/detail?id='
+
+            for (var i = 0; i < arr.length; i++) {
+                let row = arr[i]
+                if (row || true) {
+                    let propertys = row.split(',')
+                    // let item = {"车牌号码（含城区）": numberPrefix + propertys[0], "二维码内容": urlPrefix + propertys[1]}
+                    let item = {}
+                    for (var j = 0; j < propertys.length; j++) {
+                        let prpt = propertys[j]
+                        item['列' + (j + 1)] = prpt
+                    }
+                    objArr.push(item)
+                }
+            }
+            // let resultStr = '车牌号码（含城区）,二维码内容\n'
+            // for (var i = 0; i < objArr.length; i++) {
+            //     let item = objArr[i]
+            //     if (i != 0) {
+            //        resultStr = resultStr + '\n'
+            //     }
+            //     resultStr = resultStr + numberPrefix + item.number + ',' + urlPrefix + item.id
+            // }
+
+            // stringToExcel(resultStr, '401-500.xlsx')
+            xtGenExcel(objArr, 'txt转excel')
+
+            // stringToExcel(orgiginStr, 'txt转excel.xlsx')
+
+            // console.log(reader.result)
+            // let arr = []
+            // reader.result.split("\n").forEach(function(v, i){
+            //     // begin ----------------
+            //     let cleanStr = v.trim()
+            //     // if(cleanStr) {
+            //     //     console.log('===' + cleanStr);
+            //     // }else {
+            //     //     console.log('empty');
+            //     // }
+            //     arr.push(cleanStr)
+            //     //  end ----------------
+            // });
+            reader.onerror = function(){
+                console.log('读取失败');
+                console.log(reader.error);
+            };
+        };
+        reader.readAsText(file, 'utf-8');
+    });
+
 
     function clickJoin(argument) {
         // body...
@@ -183,6 +250,11 @@
         // body...
         testGenResults()
     }
+    function clickGenTxt(argument) {
+        // body...
+        let example = '张三,男,18,180,75,广东佛山,\n李四,男,19,175,69,山东滨州\n赵四,男,18,192,88,辽宁铁岭\n马三好,男,20,169,60,宁夏中卫\n诸葛甜,女,18,156,48,四川达州\n唐甜,女,21,155,63,北京密云,\n张丽,女,20,176,56,浙江湖州\n\n\n\n\n\n滴答滴，滴答滴，留几个空行。,啦啦啦，注意，中文逗号不分列,啦啦,\n列不列的，每行列数也不必须相等,当然，列数相等表格才规范'
+        stringToExcel(example, '下载示例.txt')
+    }
 
 // demo调用演示
 let sheet1data = [ // 注意数组中每列key的排序，因为导出列表时按照key的排序导出的
@@ -196,25 +268,32 @@ var secondTableRows = undefined
 
 </script>
 <style type="text/css">
-    .tips {
+    .bottom {
         position: fixed;
-        bottom: 30px;
+        bottom: 10px;
         left: 20px;
+    }
+    .gap-100 {
+        width: 10px;
+        height: 100px;
+        /* background-color: green; */
+    }
+    .txt-tips {
+        left: 20px;
+        font-size: small;
+        color: darkgray;
+    }
+    .input-txt {
+        
+    }
+    .tips {
         color: #333333;
         font-size: small;
     }
-    .btn-gen1 {
-        position: fixed;
-        bottom: 10px;
-        left: 20px;
+    .blue {
         color: blue;
     }
-    .btn-gen2 {
-        position: fixed;
-        bottom: 10px;
-        left: 120px;
-        color: blue;
-    }
+
 </style>
  
 </html>

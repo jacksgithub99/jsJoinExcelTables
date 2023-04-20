@@ -214,6 +214,8 @@
                 appendsArr = appends.split(';')
             }else if(appends.indexOf('；') != -1) {
                 appendsArr = appends.split('；')
+            }else {
+                appendsArr.push(appends)
             }
 
             console.log(appendsArr)
